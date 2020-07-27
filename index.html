@@ -624,6 +624,13 @@
         $('html, body').animate({ scrollTop: $('body')[0].scrollHeight }, 200);
     });
     
+    
+    // click - link opened:
+    $('body').on('click', '.link_common', function(event){
+        event.preventDefault();
+        window.open($(this).attr('href'), '_blank');
+    });
+    
     </script>
     
 </body>
