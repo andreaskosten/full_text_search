@@ -1,0 +1,26 @@
+@font-face {
+    font-family: 'font_light';
+    src: url(../fonts/gilroy_light.woff) format('woff');
+}
+.font_light { font-family: 'font_light'; }
+
+
+@font-face {
+    font-family: 'font_normal';
+    src: url(../fonts/gilroy_regular.woff) format('woff');
+}
+.font_normal { font-family: 'font_normal'; }
+
+
+@font-face {
+    font-family: 'font_semibold';
+    src: url(../fonts/gilroy_semibold.woff) format('woff');
+}
+.font_semibold { font-family: 'font_semibold'; }
+
+
+@font-face {
+    font-family: 'font_bold';
+    src: url(../fonts/gilroy_bold.woff) format('woff');
+}
+.font_bold { font-family: 'font_bold'; }
