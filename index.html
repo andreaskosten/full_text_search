@@ -1,0 +1,631 @@
+<html>
+<head>
+    
+    <title>full-text search</title>
+    <link rel="shortcut icon" href="img/logo.png">
+    <meta http-equiv="Cache-Control" content="private"; charset="utf-8">
+    
+    <link rel="stylesheet" type="text/css" href="css/main.css?2020_07_27">
+    <link rel="stylesheet" type="text/css" href="css/fonts.css?2020_07_20">
+    <link rel="stylesheet" type="text/css" href="css/loader.css?2020_07_27">
+    <script type="text/javascript" src="jquery-3.5.0.min.js"></script>
+    
+    <style>
+    
+    /* GRID */
+        body {
+            display: grid;
+            grid-template-areas: 
+            "header"
+            "article"
+            "footer";
+            grid-template-rows: auto 1fr auto;
+            grid-template-columns: 1fr;
+            grid-gap: 0px;
+            height: 100vh;
+            min-height: 100vh;
+            margin: 0;
+        }
+        
+        header, footer, article {
+            padding: 20px;
+        }
+        
+        #pageHeader {
+            grid-area: header;
+            background-color: #444444;
+            z-index: 3;
+        }
+        
+        #pageFooter {
+            grid-area: footer;
+            background-color: #444444;
+            padding: 30px 20px 40px 20px;
+            z-index: 3;
+            margin-top: 100px;
+        }
+        
+        #mainBlock {
+            grid-area: article;
+            background-color: #ffffff;
+            min-height: 900px;
+            z-index: 1;
+        }
+    
+    
+    /* for mobile devices: */
+    @media screen and (max-width: 1080px) {
+        
+        h1 {
+            font-family: 'font_bold';
+            font-size: 2.4em;
+        }
+        
+        p {
+            margin: 0px;
+            padding: 0px;
+            font-size: 1.4em;
+        }
+        
+        .btn_table_style {
+            width: 8vw;
+        }
+        
+        .btn_filter_author, .book_presearch_filter, .btn_simple {
+            font-size: 2em;
+            width: 24vw;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        
+        .input_simple {
+            font-size: 2.4em;
+            padding-top: 16px;
+            padding-bottom: 16px;
+            width: 88vw;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        #mainBlock {
+            flex-grow: 1;
+        }
+        
+        #pageFooter {
+            flex-shrink: 0;
+        }
+    }
+    </style>
+</head>
+
+
+<body>
+    <header id='pageHeader'>
+        <p class='texts_light' style='font-size: 1.8em; font-family: "font_bold"; margin-bottom: 5px'>полнотекстовый поиск</p>
+        
+        <p class='texts_light'>developed by <a class='link_common' href='https://andreaskostenko.space'>andreaskostenko</a></p>
+    </header>
+    
+    
+    <article id='mainBlock'>
+        
+        <div id='div_global' style='margin: 20px 50px 100px 50px'>
+            
+            <div style='margin: 24px 0px 0px 0px'>
+                <span id='var_author' style='display: none'>gesse</span>
+                
+                <p>выбор автора и произведений для поиска:</p>
+                <span class='btn_filter_author btn_filter_author_1' value='gesse' onclick='set_books_of_author("gesse");'>Герман Гессе</span>
+                <span class='btn_filter_author btn_filter_author_0' value='gete' onclick='set_books_of_author("gete");'>Иоганн Гете</span>
+            </div>
+            
+            <div>
+                <!-- <span class='btn_simple btn_available' onclick='$("#div_books_of_author").removeClass("hidden");' style='width: auto'>сузить область поиска</span> -->
+                
+                <div id='div_books_of_author' class=''>
+                    <p>если вы видите этот текст, попробуйте перезагрузить страницу.</p>
+                </div>
+            </div>
+            
+            <div style='margin: 48px 0px 0px 0px'>
+                
+                <p style='padding-bottom: 0px; margin-bottom: 12px'>кол-во захватываемых для предпоказа символов вокруг находки</p>
+                <div style='display: flex; flex-direction: row; justify-content: flex-start; align-items: center;'>
+                    <div style='width: 60px; margin-right: 4px'><p id='txt_padding' style='font-size: 1.2em; color: #0984e3; font-family: "font_bold"'>150</p></div>
+                    <div><input type='range' id='input_padding' min='50' max='500' step='5' value='150'></div>
+                </div>
+            </div>
+            
+            <div style='margin: 48px 0px 0px 0px'>
+                <input class='input_simple' id='input_search' type='text'><br>
+            </div>
+            
+            <div style='margin: 12px 0px 0px 0px'>
+                <span class='btn_simple btn_simple_available btn_available' id='btn_search'>искать</span>
+            </div>
+            
+            
+            <div id='div_results'></div>
+            
+            
+            <div id='div_stats' style='display: none; margin-top: 32px'>
+                
+                <p class='font_semibold' style='font-size: 1.4em'>подробности о том, как проходил поиск</p>
+                
+                <p>поисковых подпрограмм: <span class='font_semibold' id='txt_threads_total'>-</span></p>
+                <p>общее время: <span class='font_semibold' id='txt_time_total'>-</span></p>
+                <p>наибольшее время выполнения подпрограммы: <span class='font_semibold' id='txt_time_thread_max'>-</span></p>
+                <p>книга, по которой искала эта подпрограмма: <span class='font_semibold' id='txt_time_book_max'>-</span></p>
+                
+                <script type="text/javascript" src="Chart.js"></script>
+                <div class='' id='div_chart_time' style='width: 500px; height: 300px; margin: 30px 0px 30px 0px'>
+                </div>
+            </div>
+        </div>
+        
+    </article>
+    
+    
+    <!-- scroll buttons -->
+    <nav class='scrollers hidden' id='to_top'>
+        <div><img style='width: 16px' src='img/arrow_top.svg'></div>
+    </nav>
+    
+    <nav class='scrollers hidden' id='to_bottom'>
+        <div><img style='width: 16px' src='img/arrow_bottom.svg'></div>
+    </nav>
+    
+    
+    <footer id='pageFooter'>
+        <p class='texts_light'>Some icons on this page made by <a class='link_common' href='http://www.freepik.com/' title='Freepik'>Freepik</a> from <a class='link_common' href='https://www.flaticon.com/' title='Flaticon'>www.flaticon.com</a>.</p>
+        
+        <p class='texts_light' style='margin-top: 12px'>Если вы считаете, что на этой странице нарушаются ваши права, обратитесь <a class='link_common' href='https://www.facebook.com/andrkostenko'>сюда</a>.</p>
+    </footer>
+    
+    
+    <script>
+    
+    // when page is ready:
+    $(document).ready(function(){
+        
+        // set default author:
+        $('#var_author').text( $('.btn_filter_author_1').attr('value') );
+        set_books_of_author( $('.btn_filter_author_1').attr('value') );
+    });
+    
+    
+    // click - choose set of books:
+    $('body').on('click', '.btn_filter_author', function(event){
+        
+        $('.btn_filter_author').removeClass('btn_filter_author_1').addClass('btn_filter_author_0');
+        $(this).removeClass('btn_filter_author_0').addClass('btn_filter_author_1');
+        
+        $('#var_author').text( $(this).attr('value') );
+        set_books_of_author( $(this).attr('value') );
+    });
+    
+    
+    // function - set books of author chosen:
+    function set_books_of_author(author){
+        
+        let books_of_author = 'ошибка!';
+        
+        // i know, it's smarter here to do request to backend/database in order to get respective set of books, but this project is just demo :)
+        
+        if( author == 'gesse' ){
+            
+            books_of_author = `
+                <span class='book_presearch_filter book_presearch_filter_1'>Игра в бисер (пер. С. Апт)</span>
+                <span class='book_presearch_filter book_presearch_filter_0'>Игра в бисер (пер. Каравкина, Розанов)</span>
+                <span class='book_presearch_filter book_presearch_filter_1'>Паломничество в страну Востока</span>
+                <span class='book_presearch_filter book_presearch_filter_1'>Сиддхартха</span>
+                <span class='book_presearch_filter book_presearch_filter_0'>Нарцисс и Гольдмунд</span>`;
+        }
+        
+        if( author == 'gete' ){
+            
+            books_of_author = `
+                <span class='book_presearch_filter book_presearch_filter_1'>Фауст (пер. Б. Пастернак)</span>
+                <span class='book_presearch_filter book_presearch_filter_1'>Фауст (пер. Н. Холодковский)</span>
+                <span class='book_presearch_filter book_presearch_filter_0'>Рейнеке-лис</span>`;
+        }
+        
+        $('#div_books_of_author').html(books_of_author);
+    }
+    
+    
+    // click - filtering books of chosen author:
+    $('body').on('click', '.book_presearch_filter', function(event){
+        
+        let is_active = $(this).hasClass('book_presearch_filter_1');
+        
+        if( is_active ){
+            $(this).removeClass('book_presearch_filter_1').addClass('book_presearch_filter_0');
+        }
+        else{
+            $(this).removeClass('book_presearch_filter_0').addClass('book_presearch_filter_1');
+        }
+    });
+    
+    
+    // slider - "padding":
+    $('body').on('input', '#input_padding', function(event){
+        $('#txt_padding').text( $(this).val() );
+    });
+    
+    
+    // input - search:
+    $('body').on('input', '#input_search', function(event){
+        
+        let a = $(this).val();
+        
+        if( a.match(/['=`*]/g) ){
+            
+            a = a.replace(/['=`*]/g, '');
+            $(this).val(a);
+        }
+    });
+    
+    
+    // function - check length of request:
+    function is_length_ok(){
+        
+        if( $('#input_search').val().length > 1 ){
+            
+            return true;
+        }
+        else{
+            
+            if( $('#input_search').val().length == 1 ){ $('#div_results').html('<p>слишком короткий запрос</p>'); }
+            if( $('#input_search').val().length == 0 ){ $('#div_results').html('<p>нельзя отправить пустой запрос</p>'); }
+            
+            return false;
+        }
+    }
+    
+    // click - send request:
+    $('body').on('click', '#btn_search', function(event){
+        if( $(this).hasClass('btn_available') ){
+            
+            if( is_length_ok() ){
+                let request = $('#input_search').val();
+                send_request(request);
+            }
+        }
+    });
+    
+    
+    // press "Enter" - send request:
+    $('body').keyup(function(e){
+        if( $('#btn_search').hasClass('btn_available') && e.keyCode == 13 && $('#input_search').attr('is_active') == '1' ){
+            
+            if( is_length_ok() ){
+                let request = $('#input_search').val();
+                send_request(request);
+            }
+        }
+    });
+    
+    
+    // focusing on search input:
+        $('#input_search').focus(function() {
+            $('#input_search').attr('is_active', '1');
+        });
+        
+        $('#input_search').focusout(function() {
+            $('#input_search').attr('is_active', '0');
+        });
+    
+    
+    // function - send request:
+    function send_request(request){
+        
+        block_button('btn_search');
+        
+        // clean previous results:
+            $('#div_stats').css('display', 'none');
+            $('#div_chart_time').html('');
+        
+        // hide scroll buttons:
+            $('.scrollers').addClass('hidden');
+        
+        // set loader:
+            let loading_text = `<div class='font_semibold' style='margin-bottom: 12px; font-size: 1.1em'><p>идёт поиск...</p></div>`;
+            let loader = `<div class="lds-grid"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>`;
+            $('#div_results').html(loading_text + loader);
+        
+        // other params:
+            let padding = $('#input_padding').val();
+                        //console.log('padding = ' + padding);
+            let author = $('#var_author').text();
+        
+        // check chosen books of chosen author:
+            let set_of_books = [];
+            let cnt = 0;
+            $('.book_presearch_filter_1').each(function(i){
+                set_of_books.push( $('.book_presearch_filter_1:eq('+i+')').text() );
+                cnt++;
+            });
+            
+            if( cnt == 0 ){
+                
+                $('#div_results').html('<p>не выбрана ни одна книга указанного автора, негде искать :)</p>');
+                unblock_button('btn_search');
+                return 0;
+            }
+        
+        
+        $.ajax({
+            url: 'search.php',
+            type: 'POST',
+            data: {'request': request, 'padding': padding, 'author': author, 'set_of_books': set_of_books},
+            
+            success: function(answer){
+                console.log('ajax status: success');
+                
+                try{
+                    let j = JSON.parse(answer);
+                                console.log('j.status = ' + j.status);
+                    
+                    if( j.status == 'good' ){
+                        
+                        let on_request = 'по запросу "<b>' + request + '</b>"';
+                        
+                        if( j.total_found != 0 ){
+                            
+                            
+                            // part 1 - RESULTS:
+                                let a = '<p>' + on_request + ' за ' + j.time + ' с. найдено результатов: <b>' + j.total_found + '</b>.</p>';
+                                let b = `<p class='font_semibold' style='margin: 32px 0px 8px 0px'>фильтровать по книгам</p>` + j.div_book_filters;
+                                let c = `<div align='right'>
+                                    <img class='btn_table_style btn_table_style_0' id='btn_table_borders_0' src='img/table_borders_0.svg'>
+                                    <img class='btn_table_style btn_table_style_1' id='btn_table_borders_1' src='img/table_borders_1.svg'>
+                                </div>`;
+                                
+                                let d = `<table class='table_borders' id='table_results'>` + j.table_content + `</table>`;
+                                $('#div_results').html( a + b + c + d );
+                            
+                            
+                            // part 2 - STATS:
+                                $('#txt_threads_total').text(j.threads_total);
+                                $('#txt_time_total').text(j.time);
+                                
+                                // detect max value:
+                                let max = -1;
+                                let book_max = 'не определено';
+                                for( i = 0; i < j.array_of_time.length; i++ ){
+                                    
+                                    if( j.array_of_time[i] > max ){
+                                        max = j.array_of_time[i];
+                                        book_max = j.array_of_threads[i];
+                                    }
+                                }
+                                $('#txt_time_thread_max').text(max);
+                                $('#txt_time_book_max').text(book_max);
+                                
+                                $('#div_stats').css('display', 'block');
+                            
+                            
+                            // renumber rows in table:
+                            let counter = 0;
+                            $('.td_num').each(function(i){
+                                
+                                counter++;
+                                $('.td_num:eq('+i+')').text(counter);
+                            });
+                            
+                            for( i = 0; i < j.array_of_threads.length; i++ ){
+                                console.log('arr[' + i + '] = ' + j.array_of_threads[i]);
+                            }
+                            
+                            // show scroll buttons:
+                            $('.scrollers').removeClass('hidden');
+                            
+                            create_chart(j.array_of_time, j.array_of_threads, max);
+                        }
+                        else{
+                            
+                            $('#div_results').html('<p>' + on_request + ' ничего не найдено</p>');
+                        }
+                    }
+                    
+                    if( j.status == 'bad' ){
+                        
+                        show_error();
+                    }
+                }
+                catch(err){
+                    
+                    show_error();
+                    
+                    console.error('error while doing JSON.parse: ' + err);
+                }
+                
+                unblock_button('btn_search');
+                
+                $('#pageFooter').css('display', 'none');
+            },
+            
+            error: function(answer){
+                
+                show_error();
+                
+                console.error('common error: ' + answer);
+                
+                unblock_button('btn_search');
+            }
+        });
+    }
+    
+    
+    function show_error(){
+        $('#div_results').html('<p style="color: #c0392b">Возникла ошибка! Возможно, стоит попробовать ещё раз.</p>');
+    }
+    
+    
+    // function - block button:
+    function block_button(btn_id){
+        
+        $('#'+btn_id).removeClass('btn_available');
+        $('#'+btn_id).addClass('btn_simple_blocked').removeClass('btn_simple_available');
+    }
+    
+    
+    // function - unblock button:
+    function unblock_button(btn_id){
+        
+        $('#'+btn_id).addClass('btn_available');
+        $('#'+btn_id).addClass('btn_simple_available').removeClass('btn_simple_blocked');
+    }
+    
+    
+    // function - create chart:
+    function create_chart(array_of_time, array_of_threads, max){
+        
+        // set suggested max:
+        let suggested_max = max + 1;
+        
+        $('#div_chart_time').html(`<canvas id='chart_time' width='500' height='300'></canvas>`);
+        let myCanvas = document.getElementById('chart_time').getContext('2d');
+        
+        var myBarChart = new Chart(myCanvas, {
+            type: 'bar',
+            data: {
+            'labels': array_of_threads,
+            'datasets':
+                [
+                    {
+                        'label': 'время работы подпрограмм',
+                        'data': array_of_time,
+                        'fill': false,
+                        'backgroundColor': [ '#801919', '#aa2222', '#d52a2a', '#dd5555', '#e67f7f', '#eeaaaa' ],
+                        'borderColor': '#000',
+                        'borderWidth': 0
+                    }
+                ]
+                    },
+            options: {
+                scales:{
+                    'yAxes':[{'ticks':{'beginAtZero': true, suggestedMax: suggested_max}}]
+                },
+                legend: {
+                    display: false,
+                },
+                tooltips: {
+                    displayColors: false,
+                    cornerRadius: 0,
+                    caretSize: 0,
+                    xPadding: 16,
+                    yPadding: 10,
+                    backgroundColor: '#444',
+                    titleMarginBottom: 15
+                }
+            }
+        });
+    }
+    
+    
+    // click - filter results:
+    $('body').on('click', '.book_filter', function(event){
+        
+        let a = $(this).attr('state');
+        let btn = $(this);
+        
+        // if it's active, hide respective rows:
+        if( a == '1' ){
+            
+            $('.tr').each(function(i) {
+                if( $('.tr:eq('+i+')').attr('t') == btn.text() ){
+                    $('.tr:eq('+i+')').addClass('hidden');
+                }
+            });
+            
+            $(this).removeClass('book_filter_1').addClass('book_filter_0');
+            $(this).attr('state', '0');
+            
+            if_whole_table_hidden();
+        }
+        
+        // if it was deactivated, show respective rows:
+        if( a == '0' ){
+            
+            $('.tr').each(function(i) {
+                if( $('.tr:eq('+i+')').attr('t') == btn.text() ){
+                    $('.tr:eq('+i+')').removeClass('hidden');
+                }
+            });
+            
+            $(this).removeClass('book_filter_0').addClass('book_filter_1');
+            $(this).attr('state', '1');
+            
+            if_whole_table_hidden();
+        }
+    });
+    
+    
+    // function - if whole table hidden by filters, show warning:
+    function if_whole_table_hidden(){
+        
+        let stopped = false;
+        $('.tr').each(function(i) {
+            
+            if( !$(this).hasClass('hidden') ){
+                stopped = true;
+            }
+        });
+        
+        if( !stopped ){
+            let a = `<p class='font_semibold' id='txt_notification_all_filters' style='color: #d63031'>применены все фильтры, скрыты все результаты поиска</p>`;
+            $('#table_results').before(a);
+        }
+        else{
+            $('#txt_notification_all_filters').remove();
+        }
+    }
+    
+    
+    // click - styling table of results:
+    $('body').on('click', '.btn_table_style', function(event){
+        
+        let id = $(this).attr('id');
+        
+        // show borders for table cells:
+        if( id == 'btn_table_borders_1' ){
+            
+            $('#btn_table_borders_0').removeClass('btn_table_style_1').addClass('btn_table_style_0');
+            $('#btn_table_borders_1').removeClass('btn_table_style_0').addClass('btn_table_style_1');
+            
+            $('#table_results').addClass('table_borders');
+        }
+        
+        // hide borders for table cells:
+        if( id == 'btn_table_borders_0' ){
+            
+            $('#btn_table_borders_0').removeClass('btn_table_style_0').addClass('btn_table_style_1');
+            $('#btn_table_borders_1').removeClass('btn_table_style_1').addClass('btn_table_style_0');
+            
+            $('#table_results').removeClass('table_borders');
+        }
+    });
+    
+    
+    // click - scroll to top:
+    $('#to_top').click(function(){
+        $('html, body').animate({ scrollTop: 0 }, 200);
+    });
+    
+    
+    // click - scroll to bottom:
+    $('#to_bottom').click(function(){
+        $('html, body').animate({ scrollTop: $('body')[0].scrollHeight }, 200);
+    });
+    
+    </script>
+    
+</body>
+
+</html>
